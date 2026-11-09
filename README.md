@@ -1,5 +1,7 @@
 # ds-spdd
 
+[![CI](https://github.com/angshenting/ds-spdd/actions/workflows/ci.yml/badge.svg)](https://github.com/angshenting/ds-spdd/actions/workflows/ci.yml)
+
 Spec-driven development for data science and machine learning projects, built
 for AI coding agents.
 
