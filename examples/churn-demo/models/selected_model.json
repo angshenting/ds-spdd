@@ -1,0 +1,7 @@
+{
+  "family": "gradient_boosting",
+  "params": {
+    "pos_weight": 8
+  },
+  "seed": 42
+}

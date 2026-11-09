@@ -1,0 +1,33 @@
+[project]
+name = "ds-skills"
+version = "0.1.0"
+description = "Skills and frameworks for AI-driven data science / ML projects"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = ["ds-canvas"]
+
+[tool.uv.workspace]
+members = ["frameworks/*"]
+exclude = ["examples"]
+
+[tool.uv.sources]
+ds-canvas = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "pyright>=1.1",
+    "types-pyyaml>=6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pyright]
+include = ["frameworks", "tests"]
+pythonVersion = "3.12"

@@ -1,0 +1,15 @@
+{"family": "logistic_regression", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5513, "precision_at_30": 0.5889, "ts": "2026-11-03T03:08:03.128474+00:00"}
+{"family": "gradient_boosting", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.6092, "precision_at_30": 0.5692, "ts": "2026-11-03T03:08:03.607496+00:00"}
+{"family": "logistic_regression", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5535, "precision_at_30": 0.5898, "ts": "2026-11-03T03:08:33.305527+00:00"}
+{"family": "gradient_boosting", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.6092, "precision_at_30": 0.5692, "ts": "2026-11-03T03:08:33.758636+00:00"}
+{"family": "logistic_regression", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5535, "precision_at_30": 0.5898, "ts": "2026-11-03T03:09:15.625755+00:00"}
+{"family": "gradient_boosting", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.6092, "precision_at_30": 0.5692, "ts": "2026-11-03T03:09:15.881049+00:00"}
+{"family": "logistic_regression", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5521, "precision_at_30": 0.5897, "ts": "2026-11-03T06:48:02.242824+00:00"}
+{"family": "gradient_boosting", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5887, "precision_at_30": 0.574, "ts": "2026-11-03T06:48:02.815041+00:00"}
+{"family": "logistic_regression", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5455, "precision_at_30": 0.5863, "ts": "2026-11-03T07:38:47.301558+00:00"}
+{"family": "gradient_boosting", "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5894, "precision_at_30": 0.5743, "ts": "2026-11-03T07:38:47.944328+00:00"}
+{"family": "logistic_regression", "params": {}, "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5521, "precision_at_30": 0.5897, "ts": "2026-11-06T16:22:18.362248+00:00"}
+{"family": "gradient_boosting", "params": {"pos_weight": 1}, "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.5887, "precision_at_30": 0.574, "ts": "2026-11-06T16:22:19.036538+00:00"}
+{"family": "gradient_boosting", "params": {"pos_weight": 2}, "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.8255, "precision_at_30": 0.4622, "ts": "2026-11-06T16:22:19.621650+00:00"}
+{"family": "gradient_boosting", "params": {"pos_weight": 4}, "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.9538, "precision_at_30": 0.3691, "ts": "2026-11-06T16:22:20.170893+00:00"}
+{"family": "gradient_boosting", "params": {"pos_weight": 8}, "seed": 42, "threshold": 0.4, "split": "validation", "recall_at_30": 0.9765, "precision_at_30": 0.3329, "ts": "2026-11-06T16:22:20.737723+00:00"}

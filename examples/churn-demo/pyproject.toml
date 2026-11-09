@@ -1,0 +1,14 @@
+[project]
+name = "churn-demo"
+version = "0.1.0"
+description = "End-to-end demo of the spec-driven-ds and ds-canvas-sync skills"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2",
+    "pandas>=2",
+    "scikit-learn>=1.7",
+    "ds-canvas",
+]
+
+[tool.uv.sources]
+ds-canvas = { path = "../../frameworks/ds-canvas" }
