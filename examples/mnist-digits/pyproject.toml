@@ -1,0 +1,14 @@
+[project]
+name = "mnist-digits"
+version = "0.1.0"
+description = "End-to-end run of the spec-driven-ds skill on scikit-learn's handwritten digits"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2",
+    "pandas>=2",
+    "scikit-learn>=1.7",
+    "ds-canvas",
+]
+
+[tool.uv.sources]
+ds-canvas = { path = "../../frameworks/ds-canvas" }

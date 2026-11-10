@@ -1,0 +1,9 @@
+{
+  "round": 2,
+  "run_id": "r2-svm_rbf",
+  "rule": "max validation accuracy among runs with min_class_recall >= 0.9",
+  "validation_metrics": {
+    "accuracy": 0.9926,
+    "min_class_recall": 0.9615
+  }
+}

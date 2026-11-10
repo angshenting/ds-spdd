@@ -19,6 +19,7 @@ Every claim in the final report should trace back to the contract.
 | `skills/` | Agent skills (`SKILL.md` files) that encode the DS/ML workflow |
 | `frameworks/ds-canvas/` | Python package and CLI that validates canvas files |
 | `examples/churn-demo/` | Worked example: a churn-prediction project delivered with the skills |
+| `examples/mnist-digits/` | Test run of `spec-driven-ds` on scikit-learn's handwritten digits, with a findings log on the skills |
 | `tests/` | pytest suite for `ds-canvas` |
 | `AGENTS.md` | Working rules for AI agents contributing to this repo |
 
