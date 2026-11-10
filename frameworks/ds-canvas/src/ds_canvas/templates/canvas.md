@@ -24,12 +24,25 @@ datasets:
     source: REPLACE-path-or-query
     grain: REPLACE-one-row-per-what
     fields:
+      # type: string | integer | float | boolean | datetime
+      # role (optional): key | feature | target; unit (optional): free text
       - name: REPLACE-field-name
         type: string
+        role: key
+      - name: REPLACE-target-field
+        type: integer
+        role: target
       - name: REPLACE-derived-field
         type: float
         derived_from: [REPLACE-input-fields]
+    # optional — name a set of fields once, then use the name in any
+    # `fields` list (quality rules, S ops, pii_fields):
+    # field_groups:
+    #   REPLACE-group-name: [REPLACE-field-name]
     quality_rules:
+      # unique | non_negative: fields only
+      # missing_at_most: max (ratio 0-1); allowed_values: values (list)
+      # range: min and/or max
       - rule: unique
         fields: [REPLACE-field-name]
 ```
@@ -95,6 +108,8 @@ preprocessing:
   - op: impute_median
     fields: [REPLACE-field-name]
     fit_on: train
+  - op: drop
+    fields: [REPLACE-target-field]
 artifacts:
   models: models/
   reports: reports/
@@ -107,16 +122,19 @@ Cleaning ops run before the split and must be stateless (`deduplicate`,
 `coerce_type`, `clip`, `derive`, `aggregate`); anything fitted (`winsorize`,
 imputers, encoders, scalers) belongs in `preprocessing` with `fit_on: train`.
 `aggregate` windows need the full ordered history, so they live in `cleaning`
-(pre-split) only. Derived fields must be declared in E with `derived_from`
+(pre-split) only. Preprocessing ops are `drop`, `passthrough`, `derive`,
+`impute_mean`, `impute_median`, `impute_constant`, `one_hot_encode`,
+`target_encode`, `scale_standard`, `scale_minmax` and `winsorize`; any other
+name is an error. The target must be listed in a `drop` op. Derived fields must be declared in E with `derived_from`
 provenance — the validator rejects any field whose provenance reaches the
 target (transitive leakage) and warns on fields no op produces.
 
 ## O — Operations
 
 1. EDA on the train split only — exit: data quality rules in E verified
-2. Preprocessing per S — exit: `ds-canvas validate` clean
-3. Train baseline and candidates on train, select on validation — exit: models tracked
-4. Evaluate the selected model on test, once — exit: Results updated
+2. Preprocessing per S — exit: REPLACE-a-check-on-the-code (e.g. every fitted op's statistics computed from train rows only, and logged)
+3. Train baseline and candidates on train, select on validation — exit: every run appended to the tracking file with its round
+4. Evaluate the selected model on test, once per selection round — exit: the evaluation is recorded with per-class or per-segment metrics; Results updated only if every target is met
 5. Write report from Results — exit: report references the canvas
 
 ## N — Norms

@@ -25,6 +25,21 @@ def test_validate_canvas_with_errors_exits_one(tmp_path, capsys):
     assert "seed" in out
 
 
+def test_validate_collapses_repeats_of_the_same_finding(tmp_path, capsys):
+    import re
+
+    from ds_canvas.cli import main
+
+    text = re.sub(r"type: (string|integer|float)", "type: numeric", valid_canvas())
+    path = write(tmp_path, text)
+    assert main(["validate", path]) == 1
+    out = capsys.readouterr().out
+    assert len([line for line in out.splitlines() if "must have a type" in line]) == 1
+    assert "and 7 more like this" in out
+    assert "datasets[subscriptions].tickets_3m_mean.type" in out
+    assert "8 error(s)" in out
+
+
 def test_init_writes_canvas_scaffold(tmp_path):
     from ds_canvas.cli import main
 

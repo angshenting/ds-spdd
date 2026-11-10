@@ -36,6 +36,12 @@ is out of contract.
 - **Results** — new round outcome; only added if declared targets are met
   (the validator rejects achieved values below target — that is correct).
 
+A round's hypothesis may point outside the model layer, for example at a
+preprocessing op in S or a field in E. That change is still a round: edit
+E or S in the canvas first, validate, regenerate the affected code, and
+then follow the selection law, the test-once rule and the stop rule below
+unchanged. The `search` and `calibration` blocks are simply not used.
+
 ## Selection law (per round)
 
 - Trials run on the **validation split only**. Early stopping and any
@@ -53,7 +59,9 @@ is out of contract.
 1. **Write the hypothesis first**: what is wrong with the current round's
    model (underfit, imbalance, miscalibrated probabilities, missing family
    type), what change should fix it, and the expected effect on the
-   primary metric. One hypothesis per round.
+   primary metric. One hypothesis per round. Also write whether this is
+   the last round: each round re-reads the same test rows, so the number
+   of rounds is declared, not discovered.
 2. **Declare the decision space in the canvas before running anything**:
    the candidate family (or a new family with role: candidate), its
    `search` block (method, budget, space), calibration if the hypothesis

@@ -1,12 +1,15 @@
+import re
 import sys
 from importlib import resources
 from pathlib import Path
 
-from ds_canvas.model import Canvas
+from ds_canvas.model import Canvas, Finding
 from ds_canvas.parser import parse
 from ds_canvas.rules import validate
 
 USAGE = "usage: ds-canvas <validate FILE | init PATH>"
+COLLAPSE_AFTER = 3
+_QUOTED = re.compile(r"'[^']*'")
 
 
 def _validate_command(path: str) -> int:
@@ -31,10 +34,20 @@ def _print_findings(canvas: Canvas, findings: list) -> None:
         print(f"canvas '{name}' is valid")
         return
     print(f"canvas '{name}' has {len(findings)} finding(s):")
+    groups: dict[tuple[str, str, str], list[Finding]] = {}
     for finding in findings:
-        location = f" [{finding.dimension}]" if finding.dimension else ""
-        path = f" {finding.path}:" if finding.path else ":"
-        print(f"{finding.severity}{location}{path} {finding.message}")
+        shape = _QUOTED.sub("'_'", finding.message)
+        groups.setdefault((finding.severity, finding.dimension, shape), []).append(finding)
+    for group in groups.values():
+        shown = group if len(group) <= COLLAPSE_AFTER else group[:1]
+        for finding in shown:
+            location = f" [{finding.dimension}]" if finding.dimension else ""
+            path = f" {finding.path}:" if finding.path else ":"
+            print(f"{finding.severity}{location}{path} {finding.message}")
+        rest = group[len(shown) :]
+        if rest:
+            paths = ", ".join(f.path for f in rest)
+            print(f"  ... and {len(rest)} more like this at: {paths}")
 
 
 def _init_command(path: str) -> int:

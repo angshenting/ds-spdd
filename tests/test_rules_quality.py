@@ -1,3 +1,4 @@
+import pytest
 from canvas_factory import valid_canvas
 from ds_canvas import parse, validate
 
@@ -93,6 +94,32 @@ def test_missing_at_most_max_must_be_a_ratio():
         and "0 and 1" in f.message
         for f in findings
     )
+
+
+RANGE_CASES = [
+    # description, keys under the range rule, expected text in the message (None = no finding)
+    ("min and max", "        min: 0\n        max: 500\n", None),
+    ("max only", "        max: 500\n", None),
+    ("no bound", "", "min or max"),
+    ("non-numeric bound", "        min: low\n", "numbers"),
+    ("min above max", "        min: 9\n        max: 1\n", "must not exceed"),
+]
+
+
+@pytest.mark.parametrize(("description", "keys", "expected"), RANGE_CASES)
+def test_range_rule_bounds(description, keys, expected):
+    text = canvas_with_quality_rules(
+        "    quality_rules:\n      - rule: range\n        fields: [monthly_charges]\n" + keys
+    )
+    messages = [
+        f.message
+        for f in validate(parse(text))
+        if f.dimension == "entities" and f.severity == "error" and "quality_rules" in f.path
+    ]
+    if expected is None:
+        assert messages == [], description
+    else:
+        assert any(expected in m for m in messages), description
 
 
 def test_allowed_values_requires_a_non_empty_list():

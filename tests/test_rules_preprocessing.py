@@ -28,11 +28,31 @@ def test_preprocessing_op_must_list_fields():
     )
 
 
-def test_unknown_preprocessing_op_is_a_warning():
+def test_unknown_preprocessing_op_is_an_error():
     text = valid_canvas().replace("op: impute_median", "op: frobnicate")
     findings = validate(parse(text))
     assert any(
-        f.dimension == "structure" and f.path == "preprocessing[0].op" and f.severity == "warning"
+        f.dimension == "structure"
+        and f.path == "preprocessing[0].op"
+        and f.severity == "error"
+        and "frobnicate" in f.message
+        and "scale_standard" in f.message
+        for f in findings
+    )
+
+
+def test_target_must_be_dropped_in_preprocessing():
+    text = valid_canvas().replace(
+        "  - op: drop\n    fields: [churned_next_30d]\n",
+        "  - op: drop\n    fields: [customer_id]\n",
+    )
+    findings = validate(parse(text))
+    assert any(
+        f.dimension == "structure"
+        and f.path == "preprocessing"
+        and f.severity == "error"
+        and "churned_next_30d" in f.message
+        and "drop" in f.message
         for f in findings
     )
 

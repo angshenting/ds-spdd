@@ -1,4 +1,4 @@
-from ds_canvas.model import Canvas, Finding
+from ds_canvas.model import Canvas, Finding, Section
 
 LETTERS = {
     "requirements": "R",
@@ -51,6 +51,8 @@ def datasets_of(canvas: Canvas) -> list:
 
 FIELD_TYPES = {"string", "integer", "float", "boolean", "datetime"}
 
+FIELD_ROLES = {"key", "feature", "target"}
+
 TASKS = {"binary_classification", "multiclass_classification", "regression"}
 
 SPLIT_METHODS = {"random", "stratified", "temporal", "grouped"}
@@ -84,7 +86,9 @@ FITTED_OPS = {
     "winsorize",
 }
 
-QUALITY_RULES = {"unique", "non_negative", "missing_at_most", "allowed_values"}
+PREPROCESSING_OPS = FITTED_OPS | {"drop", "passthrough", "derive"}
+
+QUALITY_RULES = {"unique", "non_negative", "missing_at_most", "allowed_values", "range"}
 
 CLEANING_OPS = {"deduplicate", "coerce_type", "clip", "derive", "aggregate"}
 
@@ -311,13 +315,13 @@ def _preprocessing_rules(canvas: Canvas) -> list[Finding]:
                     "split (declare it under cleaning)",
                 )
             )
-        if op_name not in FITTED_OPS and op_name not in {"drop", "passthrough", "derive"}:
+        if op_name not in PREPROCESSING_OPS and op_name not in {"deduplicate", "aggregate"}:
             findings.append(
-                _warning(
+                _error(
                     "structure",
                     f"{path}.op",
-                    f"unknown preprocessing op '{op_name}' (known: "
-                    f"{sorted(FITTED_OPS | {'drop', 'passthrough'})})",
+                    f"unknown preprocessing op '{op_name}' (known: {sorted(PREPROCESSING_OPS)}); "
+                    "an unrecognised op cannot be checked for fit_on: train",
                 )
             )
         if op_name in FITTED_OPS and op.get("fit_on") != "train":
@@ -340,6 +344,21 @@ def _preprocessing_rules(canvas: Canvas) -> list[Finding]:
             )
         if op_name == "derive":
             findings += _derive_findings(op, path, known_fields)
+    dropped = {
+        name
+        for op in ops
+        if isinstance(op, dict) and op.get("op") == "drop" and isinstance(op.get("fields"), list)
+        for name in op["fields"]
+    }
+    if target and target not in dropped:
+        findings.append(
+            _error(
+                "structure",
+                "preprocessing",
+                f"target '{target}' must be listed in a drop op "
+                "(safeguard target_excluded_from_features)",
+            )
+        )
     return findings
 
 
@@ -698,6 +717,17 @@ def _quality_rule_rules(dataset: dict, path: str, field_names: set[str]) -> list
                         "missing_at_most must declare max as a ratio between 0 and 1",
                     )
                 )
+        if name == "range":
+            lo = rule.get("min")
+            hi = rule.get("max")
+            if lo is None and hi is None:
+                findings.append(
+                    _error("entities", rule_path, "range must declare min or max (or both)")
+                )
+            elif (lo is not None and not _is_number(lo)) or (hi is not None and not _is_number(hi)):
+                findings.append(_error("entities", rule_path, "range bounds must be numbers"))
+            elif lo is not None and hi is not None and lo > hi:
+                findings.append(_error("entities", rule_path, "range min must not exceed max"))
         if name == "allowed_values":
             values = rule.get("values")
             if not isinstance(values, list) or not values:
@@ -827,6 +857,7 @@ def _entities_rules(canvas: Canvas) -> list[Finding]:
             _error("entities", "datasets", "entities must declare at least one dataset")
         )
         return findings
+    target = approach_data(canvas).get("target")
     for i, dataset in enumerate(datasets):
         if not isinstance(dataset, dict):
             findings.append(_error("entities", f"datasets[{i}]", "dataset must be a mapping"))
@@ -869,6 +900,24 @@ def _entities_rules(canvas: Canvas) -> list[Finding]:
                         f"field '{field_name}' must have a type in {sorted(FIELD_TYPES)}",
                     )
                 )
+            role = field.get("role")
+            if role is not None and role not in FIELD_ROLES:
+                findings.append(
+                    _error(
+                        "entities",
+                        f"{path}.{field_name}.role",
+                        f"field '{field_name}' role must be one of {sorted(FIELD_ROLES)}",
+                    )
+                )
+            elif role == "target" and target and field_name != target:
+                findings.append(
+                    _error(
+                        "entities",
+                        f"{path}.{field_name}.role",
+                        f"field '{field_name}' has role target, but A declares target '{target}'",
+                    )
+                )
+        findings += _field_group_rules(dataset, path, seen)
         findings += _quality_rule_rules(dataset, path, seen)
     findings += _derived_field_rules(canvas)
     return findings
@@ -1004,7 +1053,122 @@ def _results_rules(canvas: Canvas) -> list[Finding]:
     return findings
 
 
+def _field_groups(dataset: dict) -> dict[str, list]:
+    groups = dataset.get("field_groups")
+    if not isinstance(groups, dict):
+        return {}
+    return {
+        name: members
+        for name, members in groups.items()
+        if isinstance(name, str) and isinstance(members, list)
+    }
+
+
+def _field_group_rules(dataset: dict, path: str, field_names: set[str]) -> list[Finding]:
+    groups = dataset.get("field_groups")
+    if groups is None:
+        return []
+    if not isinstance(groups, dict):
+        return [
+            _error(
+                "entities",
+                f"{path}.field_groups",
+                "field_groups must map a group name to a list of fields",
+            )
+        ]
+    findings: list[Finding] = []
+    for group, members in groups.items():
+        group_path = f"{path}.field_groups.{group}"
+        if group in field_names:
+            findings.append(
+                _error(
+                    "entities",
+                    group_path,
+                    f"field group '{group}' has the same name as a field",
+                )
+            )
+        if not isinstance(members, list) or not members:
+            findings.append(
+                _error(
+                    "entities",
+                    group_path,
+                    f"field group '{group}' must be a non-empty list of fields",
+                )
+            )
+            continue
+        unknown = [m for m in members if m not in field_names]
+        if unknown:
+            findings.append(
+                _error(
+                    "entities",
+                    group_path,
+                    f"fields {unknown} are not declared in dataset '{dataset.get('name')}'",
+                )
+            )
+    return findings
+
+
+def _expanded(names: object, groups: dict[str, list]) -> object:
+    if not isinstance(names, list):
+        return names
+    expanded: list = []
+    for name in names:
+        members = groups.get(name) if isinstance(name, str) else None
+        expanded.extend([name] if members is None else members)
+    return expanded
+
+
+def _with_expanded_keys(item: object, keys: set[str], groups: dict[str, list]) -> object:
+    if not isinstance(item, dict):
+        return item
+    return {k: _expanded(v, groups) if k in keys else v for k, v in item.items()}
+
+
+def _with_groups_expanded(canvas: Canvas) -> Canvas:
+    groups: dict[str, list] = {}
+    for dataset in datasets_of(canvas):
+        if isinstance(dataset, dict):
+            groups.update(_field_groups(dataset))
+    if not groups:
+        return canvas
+    sections = dict(canvas.sections)
+    entities = sections["entities"]
+    datasets = [
+        {
+            **dataset,
+            "quality_rules": [
+                _with_expanded_keys(rule, {"fields"}, groups) for rule in dataset["quality_rules"]
+            ],
+        }
+        if isinstance(dataset, dict) and isinstance(dataset.get("quality_rules"), list)
+        else dataset
+        for dataset in datasets_of(canvas)
+    ]
+    sections["entities"] = Section(
+        entities.markdown, {**(entities.data or {}), "datasets": datasets}
+    )
+    structure = sections.get("structure")
+    if structure is not None and isinstance(structure.data, dict):
+        ops = {
+            key: [_with_expanded_keys(op, {"fields", "group_by"}, groups) for op in value]
+            for key, value in structure.data.items()
+            if key in {"cleaning", "preprocessing"} and isinstance(value, list)
+        }
+        sections["structure"] = Section(structure.markdown, {**structure.data, **ops})
+    safeguards = sections.get("safeguards")
+    if safeguards is not None and isinstance(safeguards.data, dict):
+        sections["safeguards"] = Section(
+            safeguards.markdown,
+            {
+                **safeguards.data,
+                "pii_fields": _expanded(safeguards.data.get("pii_fields", []), groups),
+            },
+        )
+    return Canvas(name=canvas.name, frontmatter=canvas.frontmatter, sections=sections)
+
+
 def validate(canvas: Canvas) -> list[Finding]:
+    canvas = _with_groups_expanded(canvas)
     findings = _missing_sections(canvas) + _frontmatter_name(canvas)
     if "entities" in canvas.sections:
         findings += _entities_rules(canvas)

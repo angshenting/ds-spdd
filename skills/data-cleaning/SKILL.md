@@ -23,7 +23,9 @@ data regresses.
   - `non_negative`
   - `missing_at_most` (requires `max`, a ratio between 0 and 1)
   - `allowed_values` (requires non-empty `values` list)
-  Rule fields must be declared in the same dataset.
+  - `range` (requires `min` and/or `max`, numbers)
+  Rule fields must be declared in the same dataset; a `field_groups` name
+  may stand in for its member fields.
 - **S (structure)** — two op blocks with a strict placement law:
   - `cleaning:` ops run **before the split**, must be stateless, and must
     not declare `fit_on`: `deduplicate` (fields = dedupe key),
@@ -33,8 +35,9 @@ data regresses.
     `fit_on: train`.
   - The validator rejects: fitted ops in `cleaning`, `fit_on` on cleaning
     ops, `deduplicate` in `preprocessing` (row removal after the split
-    breaks the ratios), the target under any cleaning op, and `clip` with
-    `min > max`.
+    breaks the ratios), the target under any cleaning op, `clip` with
+    `min > max`, and any preprocessing op name it does not know (a
+    misspelled fitted op would otherwise skip the `fit_on: train` check).
 - **O (operations)** — must show the order: clean → split → quality gate on
   train → preprocess (fit on train) → train/select → evaluate once.
 
